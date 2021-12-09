@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script type="text/javascript" src="qrcode.js"></script>
+    <style>
+        body {
+            padding-top: 1em;
+        }
+        
+        #container {
+            justify-content: center;
+            width: 100%;
+            height: 300px;
+            display: flex;
+            background-color: white;
+        }
+        
+        #qrarea {
+            display: block;
+            /*left: 50%;*/
+            position: relative;
+            /*transform: translateX(-17%);*/
+        }
+        
+        #legible {
+            width: 20em;
+            position: absolute;
+            right: 3em;
+            font-family: monospace;
+        }
+        
+        form[name="datos"] {
+            background-color: #eaf3f3;
+            margin-top: 2em;
+            padding: 1em;
+        }
+        
+        form>textarea {
+            width: 80%;
+            display: block;
+            position: relative;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        form>input {
+            display: block;
+            position: relative;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2em;
+            width: 4em;
+            text-align: center;
+            margin-bottom: 0.5em;
+        }
+    </style>
+</head>
+
+<body>
+    <div id=container>
+        <div id=qrarea></div>
+        <div id=legible>
+            <h1 id=progreso></h1>
+            <p id=contenido></p>
+        </div>
+    </div>
+    <form name="datos">
+        <input type="number" value="" min="0" name=lnum> <span id=longitud></span>
+        <textarea name="todo" id="" cols="40" rows="10"></textarea>
+    </form>
+    <script type="text/javascript">
+        var qro = new QRCode("qrarea", {
+            text: "----",
+            width: 300,
+            height: 300
+        });
+        var textoOrigen = "";
+
+        function dividirPorLineas(texto) {
+            textoOrigen = texto.split("\n");
+        }
+
+        function procesar() {
+            dividirPorLineas(document.datos.todo.value);
+            let linea = document.datos.lnum.value;
+            //qro.clear();
+            qro._el.innerHTML = "";
+
+            let matchtest;
+            try {
+                matchtest = textoOrigen[linea].match(/^\-\-(.+)\s*/);
+            } catch (e) {
+                console.debug("Fuera del rango");
+            }
+            let progreso = ((parseFloat(linea) + 1) * 100 / textoOrigen.length).toFixed(2);
+            console.debug("matchtest: " + matchtest);
+            if (matchtest != null) {
+                switch (matchtest[1]) {
+                    case "0":
+                        document.getElementById("contenido").innerHTML = "<span style='font-size: 3em; color: crimson; background: yellow; padding: 0.1em'>Cambia</span>";
+                        break;
+                    case "1":
+                        document.getElementById("contenido").innerHTML = "<span style='font-size: 3em; color: white; background: darkgreen; padding: 0.1em'>YA!!</span>";
+                        break;
+                    default:
+                        document.getElementById("contenido").innerText = matchtest[1];
+                }
+
+                document.getElementById("progreso").innerText = progreso + "%\n\n";
+                return;
+            }
+
+            let datos;
+            try {
+                datos = textoOrigen[linea].replaceAll("\t", "\n");
+                qro = new QRCode("qrarea", {
+                    text: datos,
+                    width: 300,
+                    height: 300
+                });
+                let progreso = ((parseFloat(linea) + 1) * 100 / textoOrigen.length).toFixed(2);
+                document.getElementById("progreso").innerText = progreso + "%\n\n";
+                document.getElementById("contenido").innerText = datos;
+            } catch (e) {
+                datos = "\n";
+            }
+            console.log(datos);
+        }
+
+        document.datos.lnum.addEventListener("input", procesar);
+        document.datos.todo.addEventListener("input", function() {
+            document.datos.lnum.value = 0;
+            procesar();
+        });
+    </script>
+</body>
+
+</html>
